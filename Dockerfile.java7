@@ -1,0 +1,39 @@
+FROM ubuntu:14.04
+
+# Define working directory.
+WORKDIR /tmp
+
+# Install X11VNC
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    x11vnc \
+    xvfb \
+    openbox && \
+    apt-get clean && \ 
+    rm -rf /var/lib/apt/lists/* && \ 
+    mkdir ~/.vnc && \
+    bash -c 'echo "exec openbox-session &" >> ~/.xinitrc' && \
+    bash -c 'echo "exec firefox &" >> ~/.xinitrc' && \
+    bash -c 'chmod 755 ~/.xinitrc'
+
+# Install Java
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-7-jdk \
+    icedtea-7-plugin \
+    jwm \
+    wget && \
+    apt-get clean && \ 
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/java.security
+
+# Install Firefox.
+RUN wget --no-verbose -O /tmp/firefox.deb sourceforge.net/projects/ubuntuzilla/files/mozilla/apt/pool/main/f/firefox-mozilla-build/firefox-mozilla-build_39.0.3-0ubuntu1_amd64.deb --no-check-certificate && \
+    dpkg -i /tmp/firefox.deb && \
+    rm /tmp/firefox.deb
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libdbus-glib-1-2 libdbusmenu-glib4 libdbusmenu-gtk3-4 && \
+    apt-get clean && \ 
+    rm -rf /var/lib/apt/lists/*
+
+EXPOSE 5900
+
+CMD ["x11vnc","-forever","-create"]
