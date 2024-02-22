@@ -1,0 +1,58 @@
+FROM ubuntu:14.04
+
+ENV DISPLAY=:1 \
+    VNC_PORT=5900 \
+    NO_VNC_PORT=6901 \
+    VNC_COL_DEPTH=32 \
+    VNC_RESOLUTION=1920x1080
+
+# Define working directory.
+WORKDIR /tmp
+
+# Install X11VNC
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    x11vnc \
+    xvfb \
+    curl \
+    git \
+    python \
+    openbox && \
+    apt-get clean && \ 
+    rm -rf /var/lib/apt/lists/* && \ 
+    mkdir ~/.vnc && \
+    bash -c 'echo "exec openbox-session &" >> ~/.xinitrc' && \
+    bash -c 'echo "exec firefox &" >> ~/.xinitrc' && \
+    bash -c 'chmod 755 ~/.xinitrc'
+
+# Install NOVNC.
+RUN     git clone --branch v1.2.0 --single-branch https://github.com/novnc/noVNC.git /opt/noVNC; \
+        git clone --branch v0.9.0 --single-branch https://github.com/novnc/websockify.git /opt/noVNC/utils/websockify; \
+        ln -s /opt/noVNC/vnc.html /opt/noVNC/index.html
+
+# Install Java
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-6-jdk \
+    icedtea-6-plugin \
+    jwm \
+    wget && \
+    apt-get clean && \ 
+    update-alternatives --set javaws /usr/lib/jvm/java-6-openjdk-amd64/jre/bin/javaws && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Firefox.
+RUN wget --no-verbose -O /tmp/firefox.deb sourceforge.net/projects/ubuntuzilla/files/mozilla/apt/pool/main/f/firefox-mozilla-build/firefox-mozilla-build_39.0.3-0ubuntu1_amd64.deb --no-check-certificate && \
+    dpkg -i /tmp/firefox.deb && \
+    rm /tmp/firefox.deb
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libdbus-glib-1-2 libdbusmenu-glib4 libdbusmenu-gtk3-4 && \
+    apt-get clean && \ 
+    rm -rf /var/lib/apt/lists/*
+#    libtdb1 libvorbisfile3 sound-theme-freedesktop xul-ext-ubufox
+
+COPY ./entrypoint.sh /tmp
+
+#Expose port 5901 to view display using VNC Viewer
+EXPOSE 5900 6901
+
+ENTRYPOINT ["/tmp/entrypoint.sh"]
+#CMD ["x11vnc","-forever","-create"]
